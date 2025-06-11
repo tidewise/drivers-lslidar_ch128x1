@@ -136,13 +136,15 @@ base::samples::Pointcloud Protocol::handleSingleEcho(unsigned char* data)
         if (data[i] < 128) {
             double distance =
                 (data[i + 3] * 65536 + data[i + 4] * 256 + data[i + 5]) / 256.0 / 100;
-            uint8_t line_number = data[i];
-            double horizontal_angle_degree = (data[i + 1] * 256 + data[i + 2]) / 100.f;
-            uint8_t intensity = data[i + 6];
+            if (distance != 0) {
+                uint8_t line_number = data[i];
+                double horizontal_angle_degree =
+                    (data[i + 1] * 256 + data[i + 2]) / 100.f;
+                uint8_t intensity = data[i + 6];
 
-            auto point = getPoint(line_number, horizontal_angle_degree, distance);
-            point_cloud.points.push_back(point);
-            point_cloud.colors.push_back(base::Vector4d(intensity, 0, 0, 0));
+                auto point = getPoint(line_number, horizontal_angle_degree, distance);
+                point_cloud.points.push_back(point);
+            }
         }
     }
     return point_cloud;

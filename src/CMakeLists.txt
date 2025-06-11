@@ -3,6 +3,8 @@ rock_library(lslidar_ch128x1
             Driver.cpp
     HEADERS Protocol.hpp
             Driver.hpp
+            TimeServiceMode.hpp
+            UTC_Time.hpp
     DEPS_PKGCONFIG base-types iodrivers_base)
 
 rock_executable(lslidar_ch128x1_ctl Main.cpp

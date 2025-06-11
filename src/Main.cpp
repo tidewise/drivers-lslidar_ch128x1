@@ -1,7 +1,6 @@
+#include <iostream>
 #include <lslidar_ch128x1/Driver.hpp>
 #include <lslidar_ch128x1/Protocol.hpp>
-#include <iomanip>
-#include <iostream>
 
 using namespace std;
 using namespace lslidar_ch128x1;
@@ -32,7 +31,7 @@ int main(int argc, char const* argv[])
         poll_period_usec = atof(argv[2]) * 1000000;
     }
     while (true) {
-        driver.read();
+        base::samples::Pointcloud point_cloud = driver.read();
         usleep(poll_period_usec);
     }
 }

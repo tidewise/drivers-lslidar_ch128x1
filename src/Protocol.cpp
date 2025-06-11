@@ -13,6 +13,93 @@ Protocol::Protocol()
     computeDefaultSinesAndCosines();
 }
 
+void Protocol::getOffsetAngle(std::vector<int> const& prism_angles)
+{
+    double prismAngle[4];
+    float PrismOffsetVAngle = 0.0f;
+
+    // judge if there is any offset angle. 0: no vertical offset angle; other value: there
+    // is vertical offset angle
+    if (abs(prism_angles[0]) != 0) {
+        PrismOffsetVAngle = prism_angles[0] / 100.0;
+
+        for (int i = 0; i < 128; i++) {
+
+            /*
+                Distinguish the spots in the left or right； for the left, the  vertical
+               offset angle should be added; for the right, there is no change.
+            */
+            // left
+            if (i / 4 % 2 == 0) {
+                m_sin_theta_1[i] = sin(EMISSION_ANGLES_DEGREE[i / 4] + PrismOffsetVAngle);
+                m_cos_theta_1[i] = cos(EMISSION_ANGLES_DEGREE[i / 4] + PrismOffsetVAngle);
+            }
+            else {
+                m_sin_theta_1[i] = sin(EMISSION_ANGLES_DEGREE[i / 4]);
+                m_cos_theta_1[i] = cos(EMISSION_ANGLES_DEGREE[i / 4]);
+            }
+        }
+    }
+    else {
+        // follow the preset value if there is no offset angle
+        for (int i = 0; i < 128; i++) {
+            m_sin_theta_1[i] = sin(EMISSION_ANGLES_DEGREE[i / 4]);
+            m_cos_theta_1[i] = cos(EMISSION_ANGLES_DEGREE[i / 4]);
+        }
+    }
+
+    // judge if the prism needs calibration offset, all values are 0: default prism angle
+    // which is 0; -0.17; -0.34; -0.51
+    if (abs(prism_angles[1]) == 0 && abs(prism_angles[2]) == 0 &&
+        abs(prism_angles[3]) == 0 && abs(prism_angles[4]) == 0) {
+
+        for (int i = 0; i < 4; i++) {
+            prismAngle[i] = i * -0.17;
+        }
+
+        for (int i = 0; i < 128; i++) {
+            m_sin_theta_2[i] = sin(prismAngle[i % 4]);
+            m_cos_theta_2[i] = cos(prismAngle[i % 4]);
+        }
+    }
+    else {
+        for (int i = 0; i < 4; i++) {
+            prismAngle[i] = prism_angles[i + 1] / 100.0;
+        }
+
+        // add the prism angle in the device packet to the calculation, figure out the
+        // sine value and consine value first.
+        for (int i = 0; i < 128; i++) {
+            m_sin_theta_2[i] = sin(prismAngle[i % 4]);
+            m_cos_theta_2[i] = cos(prismAngle[i % 4]);
+        }
+    }
+}
+
+void Protocol::handleDIFOP(unsigned char* data)
+{
+    if (data[44] == 0x00) {
+        m_time_service_mode = TimeServiceMode::GPS;
+    }
+    else if (data[44] == 0x01) {
+        m_time_service_mode = TimeServiceMode::GPTP;
+    }
+
+    m_utc_time.year = data[52] + 2000;
+    m_utc_time.month = data[53];
+    m_utc_time.day = data[54];
+    m_utc_time.hour = data[55];
+    m_utc_time.minute = data[56];
+    m_utc_time.second = data[57];
+
+    std::vector<int> prism_angles;
+    for (int i = 0; i < 5; i++) {
+        short int prism_angle = data[240 + i * 2] * 256 + data[241 + i * 2];
+        prism_angles.emplace_back(std::move(prism_angle));
+    }
+    getOffsetAngle(prism_angles);
+}
+
 base::Point Protocol::getPoint(uint8_t line_number,
     double horizontal_angle_degree,
     double distance)

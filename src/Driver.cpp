@@ -17,7 +17,7 @@ int Driver::extractPacket(uint8_t const* buffer, size_t buffer_size) const
     return buffer_size;
 }
 
-base::samples::Pointcloud Driver::read()
+std::optional<base::samples::Pointcloud> Driver::read()
 {
     uint8_t buffer[INTERNAL_BUFFER_SIZE];
     int packet_size = readPacket(buffer, INTERNAL_BUFFER_SIZE);

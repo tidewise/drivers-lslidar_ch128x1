@@ -17,9 +17,18 @@ TEST_F(ProtocolTest, it_parses_a_msop_packet_single_echo_mode)
     file.close();
 
     auto protocol = Protocol();
-    auto point_cloud = protocol.handleSingleEcho(data);
+    protocol.handleSingleEcho(data);
+    auto point_cloud = protocol.getPointCloud();
     ASSERT_NEAR(point_cloud.points[0].x(), -0.331206, 1e-3);
     ASSERT_NEAR(point_cloud.points[0].y(), 9.11941, 1e-3);
     ASSERT_NEAR(point_cloud.points[0].z(), -0.515942, 1e-3);
-    ASSERT_EQ(point_cloud.points.size(), 171);
+    ASSERT_EQ(point_cloud.points.size(), 88);
+}
+
+TEST_F(ProtocolTest, it_returns_a_point_cloud_if_the_start_marker_was_received)
+{
+}
+
+TEST_F(ProtocolTest, it_returns_nullopt_if_the_start_marker_wasnt_received)
+{
 }

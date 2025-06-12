@@ -5,6 +5,7 @@
 #include "lslidar_ch128x1/UTC_Time.hpp"
 #include <base/Float.hpp>
 #include <base/samples/Pointcloud.hpp>
+#include <optional>
 
 namespace lslidar_ch128x1 {
     /**
@@ -12,11 +13,13 @@ namespace lslidar_ch128x1 {
      */
     class Protocol {
     public:
-        base::samples::Pointcloud handleSingleEcho(unsigned char* data);
+        std::optional<base::samples::Pointcloud> handleSingleEcho(unsigned char* data);
         Protocol();
         void handleDIFOP(unsigned char* data);
+        base::samples::Pointcloud getPointCloud();
 
     private:
+        base::samples::Pointcloud m_point_cloud;
         double m_sin_theta_1[128];
         double m_sin_theta_2[128];
         double m_cos_theta_1[128];
@@ -30,6 +33,7 @@ namespace lslidar_ch128x1 {
         UTC_Time m_utc_time;
         TimeServiceMode m_time_service_mode;
         void getOffsetAngle(std::vector<int> const& prism_angles);
+        bool m_full_frame = false;
     };
     static constexpr double EMISSION_ANGLES_DEGREE[32] = {-17,
         -16,

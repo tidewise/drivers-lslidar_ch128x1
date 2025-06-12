@@ -17,7 +17,7 @@ namespace lslidar_ch128x1 {
         static const int PACKET_SIZE = 1206;
         static const int INTERNAL_BUFFER_SIZE = PACKET_SIZE * 4;
         lslidar_ch128x1::Protocol protocol;
-        base::samples::Pointcloud read();
+        std::optional<base::samples::Pointcloud> read();
         std::unique_ptr<Driver> m_driver;
     };
 }

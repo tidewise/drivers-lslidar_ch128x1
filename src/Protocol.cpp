@@ -1,4 +1,5 @@
 #include "Protocol.hpp"
+#include <iostream>
 #include <lslidar_ch128x1/Protocol.hpp>
 #include <vector>
 
@@ -11,6 +12,7 @@ double toRad(double degree);
 Protocol::Protocol()
 {
     computeDefaultSinesAndCosines();
+    m_full_frame = false;
 }
 
 void Protocol::getOffsetAngle(std::vector<int> const& prism_angles)
@@ -100,6 +102,11 @@ void Protocol::handleDIFOP(unsigned char* data)
     getOffsetAngle(prism_angles);
 }
 
+base::samples::Pointcloud Protocol::getPointCloud()
+{
+    return m_point_cloud;
+}
+
 base::Point Protocol::getPoint(uint8_t line_number,
     double horizontal_angle_degree,
     double distance)
@@ -114,8 +121,12 @@ base::Point Protocol::getPoint(uint8_t line_number,
     return point;
 }
 
-base::samples::Pointcloud Protocol::handleSingleEcho(unsigned char* data)
+std::optional<base::samples::Pointcloud> Protocol::handleSingleEcho(unsigned char* data)
 {
+    if (m_full_frame == true) {
+        m_point_cloud.points.clear();
+        m_full_frame = false;
+    }
     uint64_t timestamp_microseconds =
         (static_cast<uint64_t>(data[1200] << 24) +
             static_cast<uint64_t>(data[1201] << 16) +
@@ -130,9 +141,13 @@ base::samples::Pointcloud Protocol::handleSingleEcho(unsigned char* data)
         data[1199],
         miliseconds,
         microseconds);
-    Pointcloud point_cloud;
-    point_cloud.time = time;
     for (int i = 0; i < 1197; i = i + 7) {
+        if (data[i] == 0xff && data[i + 1] == 0xaa && data[i + 2] == 0xbb &&
+            data[i + 3] == 0xcc && data[i + 4] == 0xdd) {
+            m_full_frame = true;
+            m_point_cloud.time = time;
+            return m_point_cloud;
+        }
         if (data[i] < 128) {
             double distance =
                 (data[i + 3] * 65536 + data[i + 4] * 256 + data[i + 5]) / 256.0 / 100;
@@ -140,14 +155,16 @@ base::samples::Pointcloud Protocol::handleSingleEcho(unsigned char* data)
                 uint8_t line_number = data[i];
                 double horizontal_angle_degree =
                     (data[i + 1] * 256 + data[i + 2]) / 100.f;
+
+                // TODO: fill point cloud colors
                 uint8_t intensity = data[i + 6];
 
                 auto point = getPoint(line_number, horizontal_angle_degree, distance);
-                point_cloud.points.push_back(point);
+                m_point_cloud.points.push_back(point);
             }
         }
     }
-    return point_cloud;
+    return std::nullopt;
 }
 
 double toRad(double degree)

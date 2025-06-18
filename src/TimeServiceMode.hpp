@@ -3,7 +3,8 @@
 
 namespace lslidar_ch128x1 {
     /**
-     *
+     * @brief The time synchronization. It could be done with GPS or PTP (Precision
+     * Time Protocol)
      */
     enum TimeServiceMode {
         GPS = 0,

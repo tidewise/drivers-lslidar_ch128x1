@@ -21,5 +21,5 @@ std::optional<base::samples::Pointcloud> Driver::read()
 {
     uint8_t buffer[INTERNAL_BUFFER_SIZE];
     readPacket(buffer, INTERNAL_BUFFER_SIZE);
-    return protocol.handleSingleEcho(buffer);
+    return protocol.handleData(buffer);
 }

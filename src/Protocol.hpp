@@ -16,6 +16,7 @@ namespace lslidar_ch128x1 {
         void handleDIFOP(unsigned char* data);
         base::samples::Pointcloud getPointCloud();
         Configuration getConfiguration();
+        std::optional<base::samples::Pointcloud> handleData(unsigned char* data);
 
     private:
         Configuration m_configuration;

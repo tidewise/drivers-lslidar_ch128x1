@@ -268,6 +268,22 @@ std::optional<base::samples::Pointcloud> Protocol::handleSingleEcho(unsigned cha
     return {};
 }
 
+bool isDIFOPMarker(unsigned char* data)
+{
+    return data[0] == 0xa5 && data[1] == 0xff && data[2] == 0x00 && data[3] == 0x5a;
+}
+
+std::optional<base::samples::Pointcloud> Protocol::handleData(unsigned char* data)
+{
+    if (isDIFOPMarker(data)) {
+        handleDIFOP(data);
+        return {};
+    }
+    else {
+        return handleSingleEcho(data);
+    }
+}
+
 double toRad(double degree)
 {
     return (degree * M_PI / 180);

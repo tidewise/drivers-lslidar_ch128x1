@@ -23,8 +23,8 @@ namespace lslidar_ch128x1 {
          * Eg. "192.168.88.1"
          */
         std::string computer_ip;
-        uint16_t data_port;
-        uint16_t device_port;
+        uint16_t data_port = 0;
+        uint16_t device_port = 0;
         /**
          * @brief true - indicates that the lidar is stationary
          * false - indicates that the lidar is rotating

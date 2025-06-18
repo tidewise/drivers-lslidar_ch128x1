@@ -208,6 +208,17 @@ base::Vector4d colorByReflectivity(uint8_t intensity)
     }
 }
 
+bool isStartMarker(unsigned char* data)
+{
+    return data[0] == 0xff && data[1] == 0xaa && data[2] == 0xbb && data[3] == 0xcc &&
+           data[4] == 0xdd;
+}
+
+double computeDistance(unsigned char* data)
+{
+    return (data[3] * 65536 + data[4] * 256 + data[5]) / 256.0 / 100;
+}
+
 std::optional<base::samples::Pointcloud> Protocol::handleSingleEcho(unsigned char* data)
 {
     if (m_full_frame == true) {
@@ -230,8 +241,7 @@ std::optional<base::samples::Pointcloud> Protocol::handleSingleEcho(unsigned cha
         miliseconds,
         microseconds);
     for (int i = 0; i < 1197; i = i + 7) {
-        if (data[i] == 0xff && data[i + 1] == 0xaa && data[i + 2] == 0xbb &&
-            data[i + 3] == 0xcc && data[i + 4] == 0xdd) {
+        if (isStartMarker(data + i)) {
             m_full_frame = true;
             // TODO: Use the syncronized time here. We are using the time::now() at this
             // moment cause we need a hardware integration between the lidar and a $GPRMC
@@ -239,9 +249,9 @@ std::optional<base::samples::Pointcloud> Protocol::handleSingleEcho(unsigned cha
             m_point_cloud.time = base::Time::now();
             return m_point_cloud;
         }
+        // data[i] is the vertical line, so it can't be higher than 127
         if (data[i] < 128) {
-            double distance =
-                (data[i + 3] * 65536 + data[i + 4] * 256 + data[i + 5]) / 256.0 / 100;
+            double distance = computeDistance(data + i);
             if (distance != 0) {
                 uint8_t line_number = data[i];
                 double horizontal_angle_degree =
@@ -255,7 +265,7 @@ std::optional<base::samples::Pointcloud> Protocol::handleSingleEcho(unsigned cha
             }
         }
     }
-    return std::nullopt;
+    return {};
 }
 
 double toRad(double degree)

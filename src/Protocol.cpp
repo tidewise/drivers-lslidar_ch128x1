@@ -7,26 +7,25 @@ using namespace lslidar_ch128x1;
 using namespace base::samples;
 using namespace std;
 
-double toRad(double degree);
-
 Protocol::Protocol()
 {
+    for (unsigned int i = 0; i < 32; i++) {
+        m_emission_angles.push_back(base::Angle::fromDeg(EMISSION_ANGLES_DEGREE[i]));
+    }
     computeDefaultSinesAndCosines();
     m_full_frame = false;
 }
 
 void Protocol::getOffsetAngle(std::vector<int> const& prism_angles)
 {
-    double prismAngle[4];
-    float PrismOffsetVAngle = 0.0f;
-
     /**
      * Judge if there is any offset angle. 0: no vertical offset angle; other value: there
      * is vertical offset angle
      */
     if (abs(prism_angles[0]) != 0) {
-        PrismOffsetVAngle = prism_angles[0] / 100.0;
-
+        float prism_offset_vertical_angle_degree = prism_angles[0] / 100.0;
+        base::Angle prism_offset_vertical_angle =
+            base::Angle::fromDeg(prism_offset_vertical_angle_degree);
         for (int i = 0; i < 128; i++) {
             /**
              * Distinguish the spots in the left or right； for the left, the  vertical
@@ -34,49 +33,50 @@ void Protocol::getOffsetAngle(std::vector<int> const& prism_angles)
              */
             // left
             if (i / 4 % 2 == 0) {
-                m_sin_theta_1[i] = sin(EMISSION_ANGLES_DEGREE[i / 4] + PrismOffsetVAngle);
-                m_cos_theta_1[i] = cos(EMISSION_ANGLES_DEGREE[i / 4] + PrismOffsetVAngle);
+                m_sin_theta_1[i] = sin(
+                    (m_emission_angles[i / 4] + prism_offset_vertical_angle).getRad());
+                m_cos_theta_1[i] = cos(
+                    (m_emission_angles[i / 4] + prism_offset_vertical_angle).getRad());
             }
             else {
-                m_sin_theta_1[i] = sin(EMISSION_ANGLES_DEGREE[i / 4]);
-                m_cos_theta_1[i] = cos(EMISSION_ANGLES_DEGREE[i / 4]);
+                m_sin_theta_1[i] = sin((m_emission_angles[i / 4]).getRad());
+                m_cos_theta_1[i] = cos((m_emission_angles[i / 4]).getRad());
             }
         }
     }
     else {
         // Follow the preset value if there is no offset angle
         for (int i = 0; i < 128; i++) {
-            m_sin_theta_1[i] = sin(EMISSION_ANGLES_DEGREE[i / 4]);
-            m_cos_theta_1[i] = cos(EMISSION_ANGLES_DEGREE[i / 4]);
+            m_sin_theta_1[i] = sin((m_emission_angles[i / 4]).getRad());
+            m_cos_theta_1[i] = cos((m_emission_angles[i / 4]).getRad());
         }
     }
     /**
      * Judge if the prism needs calibration offset, all values are 0: default prism angle
      * which is 0; -0.17; -0.34; -0.51
      */
+    base::Angle prism_angle[4];
     if (abs(prism_angles[1]) == 0 && abs(prism_angles[2]) == 0 &&
         abs(prism_angles[3]) == 0 && abs(prism_angles[4]) == 0) {
-
         for (int i = 0; i < 4; i++) {
-            prismAngle[i] = i * -0.17;
+            prism_angle[i] = base::Angle::fromDeg(i * -0.17);
         }
-
         for (int i = 0; i < 128; i++) {
-            m_sin_theta_2[i] = sin(prismAngle[i % 4]);
-            m_cos_theta_2[i] = cos(prismAngle[i % 4]);
+            m_sin_theta_2[i] = sin((prism_angle[i % 4]).getRad());
+            m_cos_theta_2[i] = cos((prism_angle[i % 4]).getRad());
         }
     }
     else {
         for (int i = 0; i < 4; i++) {
-            prismAngle[i] = prism_angles[i + 1] / 100.0;
+            prism_angle[i] = base::Angle::fromDeg(prism_angles[i + 1] / 100.0);
         }
         /**
          * Add the prism angle in the device packet to the calculation, figure out the
          * sine value and consine value first.
          */
         for (int i = 0; i < 128; i++) {
-            m_sin_theta_2[i] = sin(prismAngle[i % 4]);
-            m_cos_theta_2[i] = cos(prismAngle[i % 4]);
+            m_sin_theta_2[i] = sin((prism_angle[i % 4]).getRad());
+            m_cos_theta_2[i] = cos((prism_angle[i % 4]).getRad());
         }
     }
 }
@@ -167,15 +167,14 @@ base::samples::Pointcloud Protocol::getPointCloud()
 }
 
 base::Point Protocol::getPoint(uint8_t line_number,
-    double horizontal_angle_degree,
+    base::Angle const& horizontal_angle,
     double distance)
 {
-    double vertical_angle_sin =
-        computeVerticalAngleSin(line_number, horizontal_angle_degree);
+    double vertical_angle_sin = computeVerticalAngleSin(line_number, horizontal_angle);
     double vertical_angle_cos = sqrt(1 - vertical_angle_sin * vertical_angle_sin);
     base::Point point;
-    point.x() = distance * vertical_angle_cos * cos(toRad(horizontal_angle_degree));
-    point.y() = distance * vertical_angle_cos * sin(toRad(horizontal_angle_degree));
+    point.x() = distance * vertical_angle_cos * cos(horizontal_angle.getRad());
+    point.y() = distance * vertical_angle_cos * sin(horizontal_angle.getRad());
     point.z() = distance * vertical_angle_sin;
     return point;
 }
@@ -254,12 +253,12 @@ std::optional<base::samples::Pointcloud> Protocol::handleSingleEcho(unsigned cha
             double distance = computeDistance(data + i);
             if (distance != 0) {
                 uint8_t line_number = data[i];
-                double horizontal_angle_degree =
-                    (data[i + 1] * 256 + data[i + 2]) / 100.f;
+                base::Angle horizontal_angle =
+                    base::Angle::fromDeg((data[i + 1] * 256 + data[i + 2]) / 100.f);
 
                 uint8_t intensity = data[i + 6];
 
-                auto point = getPoint(line_number, horizontal_angle_degree, distance);
+                auto point = getPoint(line_number, horizontal_angle, distance);
                 m_point_cloud.points.push_back(point);
                 m_point_cloud.colors.push_back(colorByReflectivity(intensity));
             }
@@ -284,16 +283,11 @@ std::optional<base::samples::Pointcloud> Protocol::handleData(unsigned char* dat
     }
 }
 
-double toRad(double degree)
-{
-    return (degree * M_PI / 180);
-}
-
 double Protocol::computeVerticalAngleSin(uint8_t line_number,
-    double horizontal_angle_degree)
+    base::Angle const& horizontal_angle)
 {
     double r = m_cos_theta_2[line_number] * m_cos_theta_1[line_number] *
-                   cos(toRad(horizontal_angle_degree / 2.0)) -
+                   cos(horizontal_angle.getRad() / 2.0) -
                m_sin_theta_2[line_number] * m_sin_theta_1[line_number];
     double sin_vertical_angle =
         m_sin_theta_1[line_number] + 2 * r * m_sin_theta_2[line_number];
@@ -303,10 +297,10 @@ double Protocol::computeVerticalAngleSin(uint8_t line_number,
 void Protocol::computeDefaultSinesAndCosines()
 {
     for (int i = 0; i < 128; i++) {
-        m_sin_theta_1[i] = sin(toRad(EMISSION_ANGLES_DEGREE[i / 4]));
-        m_sin_theta_2[i] = sin(toRad((i % 4) * (-0.17)));
-        m_cos_theta_1[i] = cos(toRad(EMISSION_ANGLES_DEGREE[i / 4]));
-        m_cos_theta_2[i] = cos(toRad((i % 4) * (-0.17)));
+        m_sin_theta_1[i] = sin((m_emission_angles[i / 4]).getRad());
+        m_sin_theta_2[i] = sin((base::Angle::fromDeg((i % 4) * (-0.17))).getRad());
+        m_cos_theta_1[i] = cos((m_emission_angles[i / 4]).getRad());
+        m_cos_theta_2[i] = cos((base::Angle::fromDeg((i % 4) * (-0.17))).getRad());
     }
 }
 

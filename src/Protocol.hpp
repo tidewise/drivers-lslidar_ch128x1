@@ -26,13 +26,14 @@ namespace lslidar_ch128x1 {
         double m_cos_theta_1[128];
         double m_cos_theta_2[128];
         bool m_full_frame = false;
+        std::vector<base::Angle> m_emission_angles;
 
         base::Point getPoint(uint8_t line_number,
-            double horizontal_angle_degree,
+            base::Angle const& horizontal_angle,
             double distance);
         void computeDefaultSinesAndCosines();
         double computeVerticalAngleSin(uint8_t line_number,
-            double horizontal_angle_degree);
+            base::Angle const& horizontal_angle);
         void getOffsetAngle(std::vector<int> const& prism_angles);
     };
     static constexpr double EMISSION_ANGLES_DEGREE[32] = {-17,

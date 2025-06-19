@@ -64,3 +64,19 @@ TEST_F(ProtocolTest, it_parses_a_difop_message)
     ASSERT_EQ(2369, configuration.device_port);
     ASSERT_EQ(1, configuration.flow_packet_interval);
 }
+
+TEST_F(ProtocolTest,
+    it_correctly_parses_a_msop_packet_single_echo_mode_after_processing_a_difop)
+{
+    auto data = lslidar_ch128x1::openAndReadFile(string("/DIFOP.bin"));
+    protocol.handleDIFOP(data.first);
+
+    data = lslidar_ch128x1::openAndReadFile(string("/MSOP.bin"));
+    protocol.handleSingleEcho(data.first);
+    auto point_cloud = protocol.getPointCloud();
+
+    ASSERT_NEAR(point_cloud.points[0].x(), -0.331206, 1e-3);
+    ASSERT_NEAR(point_cloud.points[0].y(), 9.11941, 1e-3);
+    ASSERT_NEAR(point_cloud.points[0].z(), -0.515942, 1e-3);
+    ASSERT_EQ(point_cloud.points.size(), 88);
+}

@@ -1,4 +1,5 @@
 #include "Protocol.hpp"
+#include <base-logging/Logging.hpp>
 #include <iomanip>
 #include <lslidar_ch128x1/Protocol.hpp>
 #include <vector>
@@ -248,20 +249,21 @@ std::optional<base::samples::Pointcloud> Protocol::handleSingleEcho(unsigned cha
             m_point_cloud.time = base::Time::now();
             return m_point_cloud;
         }
-        // data[i] is the vertical line, so it can't be higher than 127
-        if (data[i] < 128) {
-            double distance = computeDistance(data + i);
-            if (distance != 0) {
-                uint8_t line_number = data[i];
-                base::Angle horizontal_angle =
-                    base::Angle::fromDeg((data[i + 1] * 256 + data[i + 2]) / 100.f);
+        if (data[i] >= 128) {
+            LOG_WARN_S << "Ignoring a point since it references an invalid line number.";
+            continue;
+        }
+        double distance = computeDistance(data + i);
+        if (distance != 0) {
+            uint8_t line_number = data[i];
+            base::Angle horizontal_angle =
+                base::Angle::fromDeg((data[i + 1] * 256 + data[i + 2]) / 100.f);
 
-                uint8_t intensity = data[i + 6];
+            uint8_t intensity = data[i + 6];
 
-                auto point = getPoint(line_number, horizontal_angle, distance);
-                m_point_cloud.points.push_back(point);
-                m_point_cloud.colors.push_back(colorByReflectivity(intensity));
-            }
+            auto point = getPoint(line_number, horizontal_angle, distance);
+            m_point_cloud.points.push_back(point);
+            m_point_cloud.colors.push_back(colorByReflectivity(intensity));
         }
     }
     return {};

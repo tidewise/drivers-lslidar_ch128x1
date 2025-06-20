@@ -26,7 +26,7 @@ void Protocol::getOffsetAngle(std::vector<int> const& prism_angles)
         float prism_offset_vertical_angle_degree = prism_angles[0] / 100.0;
         base::Angle prism_offset_vertical_angle =
             base::Angle::fromDeg(prism_offset_vertical_angle_degree);
-        for (int i = 0; i < 128; i++) {
+        for (size_t i = 0; i < 128; i++) {
             /**
              * Distinguish the spots in the left or right； for the left, the  vertical
              * offset angle should be added; for the right, there is no change.
@@ -46,7 +46,7 @@ void Protocol::getOffsetAngle(std::vector<int> const& prism_angles)
     }
     else {
         // Follow the preset value if there is no offset angle
-        for (int i = 0; i < 128; i++) {
+        for (size_t i = 0; i < 128; i++) {
             m_sin_theta_1[i] = sin((m_emission_angles[i / 4]).getRad());
             m_cos_theta_1[i] = cos((m_emission_angles[i / 4]).getRad());
         }
@@ -58,23 +58,23 @@ void Protocol::getOffsetAngle(std::vector<int> const& prism_angles)
     base::Angle prism_angle[4];
     if (abs(prism_angles[1]) == 0 && abs(prism_angles[2]) == 0 &&
         abs(prism_angles[3]) == 0 && abs(prism_angles[4]) == 0) {
-        for (int i = 0; i < 4; i++) {
+        for (size_t i = 0; i < 4; i++) {
             prism_angle[i] = base::Angle::fromDeg(i * -0.17);
         }
-        for (int i = 0; i < 128; i++) {
+        for (size_t i = 0; i < 128; i++) {
             m_sin_theta_2[i] = sin((prism_angle[i % 4]).getRad());
             m_cos_theta_2[i] = cos((prism_angle[i % 4]).getRad());
         }
     }
     else {
-        for (int i = 0; i < 4; i++) {
+        for (size_t i = 0; i < 4; i++) {
             prism_angle[i] = base::Angle::fromDeg(prism_angles[i + 1] / 100.0);
         }
         /**
          * Add the prism angle in the device packet to the calculation, figure out the
          * sine value and consine value first.
          */
-        for (int i = 0; i < 128; i++) {
+        for (size_t i = 0; i < 128; i++) {
             m_sin_theta_2[i] = sin((prism_angle[i % 4]).getRad());
             m_cos_theta_2[i] = cos((prism_angle[i % 4]).getRad());
         }

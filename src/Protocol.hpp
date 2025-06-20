@@ -11,11 +11,32 @@
 namespace lslidar_ch128x1 {
     class Protocol {
     public:
+        /**
+         * @brief Parses a MSOP (Main Data Output Protocol) message for single echo mode
+         *
+         * It contains the point cloud data
+         *
+         * @param data
+         * @return std::optional<base::samples::Pointcloud>
+         */
         std::optional<base::samples::Pointcloud> handleSingleEcho(unsigned char* data);
         Protocol();
+        /**
+         * @brief Parses a DIFOP (Device Information Output Protocol) message
+         *
+         * It contains the LiDAR configuration
+         *
+         * @param data
+         */
         void handleDIFOP(unsigned char* data);
         base::samples::Pointcloud getPointCloud();
         Configuration getConfiguration();
+        /**
+         * @brief Identifies and call the right protocol handler
+         *
+         * @param data
+         * @return std::optional<base::samples::Pointcloud>
+         */
         std::optional<base::samples::Pointcloud> handleData(unsigned char* data);
 
     private:
@@ -28,6 +49,14 @@ namespace lslidar_ch128x1 {
         bool m_full_frame = false;
         std::vector<base::Angle> m_emission_angles;
 
+        /**
+         * @brief Calculate the point from the line, the horizontal angle and the distance
+         *
+         * @param line_number The horizontal line of the point
+         * @param horizontal_angle The horizontal angle of the point
+         * @param distance The distance of the point to the LiDAR
+         * @return base::Point
+         */
         base::Point getPoint(uint8_t line_number,
             base::Angle const& horizontal_angle,
             double distance);

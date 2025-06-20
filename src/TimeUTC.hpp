@@ -2,9 +2,6 @@
 #define LSLIDAR_CH128X1_TIMEUTC_HPP
 
 namespace lslidar_ch128x1 {
-    /**
-     *
-     */
     struct TimeUTC {
         int year = 2000;
         int month = 0;

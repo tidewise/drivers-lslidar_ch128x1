@@ -180,7 +180,7 @@ base::Point Protocol::getPoint(uint8_t line_number,
     return point;
 }
 
-base::Vector4d colorByReflectivity(uint8_t intensity)
+static base::Vector4d colorByReflectivity(uint8_t intensity)
 {
     if (intensity < 30) {
         return base::Vector4d(0,
@@ -208,18 +208,18 @@ base::Vector4d colorByReflectivity(uint8_t intensity)
     }
 }
 
-bool isStartMarker(unsigned char* data)
+static bool isStartMarker(unsigned char* data)
 {
     return data[0] == 0xff && data[1] == 0xaa && data[2] == 0xbb && data[3] == 0xcc &&
            data[4] == 0xdd;
 }
 
-double computeDistance(unsigned char* data)
+static double computeDistance(unsigned char* data)
 {
     return (data[3] * 65536 + data[4] * 256 + data[5]) / 256.0 / 100;
 }
 
-base::Time timeFromData(uint8_t* data)
+static base::Time timeFromData(Configuration const& conf, uint8_t* data) // NOLINT
 {
     uint64_t timestamp_microseconds =
         (static_cast<uint64_t>(data[1200] << 24) +
@@ -227,9 +227,9 @@ base::Time timeFromData(uint8_t* data)
             static_cast<uint64_t>(data[1202] << 8) + data[1203]);
     int miliseconds = timestamp_microseconds / 1000;
     int microseconds = timestamp_microseconds % 1000;
-    return base::Time::fromTimeValues(m_configuration.time_utc.year,
-        m_configuration.time_utc.month,
-        m_configuration.time_utc.day,
+    return base::Time::fromTimeValues(conf.time_utc.year,
+        conf.time_utc.month,
+        conf.time_utc.day,
         data[1197],
         data[1198],
         data[1199],

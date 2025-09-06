@@ -219,20 +219,15 @@ double computeDistance(unsigned char* data)
     return (data[3] * 65536 + data[4] * 256 + data[5]) / 256.0 / 100;
 }
 
-std::optional<base::samples::Pointcloud> Protocol::handleSingleEcho(unsigned char* data)
+base::Time timeFromData(uint8_t* data)
 {
-    if (m_full_frame == true) {
-        m_point_cloud.points.clear();
-        m_point_cloud.colors.clear();
-        m_full_frame = false;
-    }
     uint64_t timestamp_microseconds =
         (static_cast<uint64_t>(data[1200] << 24) +
             static_cast<uint64_t>(data[1201] << 16) +
             static_cast<uint64_t>(data[1202] << 8) + data[1203]);
     int miliseconds = timestamp_microseconds / 1000;
     int microseconds = timestamp_microseconds % 1000;
-    base::Time time = base::Time::fromTimeValues(m_configuration.time_utc.year,
+    return base::Time::fromTimeValues(m_configuration.time_utc.year,
         m_configuration.time_utc.month,
         m_configuration.time_utc.day,
         data[1197],
@@ -240,6 +235,15 @@ std::optional<base::samples::Pointcloud> Protocol::handleSingleEcho(unsigned cha
         data[1199],
         miliseconds,
         microseconds);
+}
+
+std::optional<base::samples::Pointcloud> Protocol::handleSingleEcho(unsigned char* data)
+{
+    if (m_full_frame == true) {
+        m_point_cloud.points.clear();
+        m_point_cloud.colors.clear();
+        m_full_frame = false;
+    }
     for (int i = 0; i < 1197; i = i + 7) {
         if (isStartMarker(data + i)) {
             m_full_frame = true;

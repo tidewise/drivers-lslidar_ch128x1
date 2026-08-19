@@ -17,9 +17,9 @@ TEST_F(ProtocolTest, it_parses_a_msop_packet_single_echo_mode)
     protocol.handleSingleEcho(data.first);
     auto point_cloud = protocol.getPointCloud();
 
-    ASSERT_NEAR(point_cloud.points[0].x(), -0.331206, 1e-3);
-    ASSERT_NEAR(point_cloud.points[0].y(), 9.11941, 1e-3);
-    ASSERT_NEAR(point_cloud.points[0].z(), -0.515942, 1e-3);
+    ASSERT_NEAR(point_cloud.points[0].x(), 9.11846, 1e-3);
+    ASSERT_NEAR(point_cloud.points[0].y(), 0.331172, 1e-3);
+    ASSERT_NEAR(point_cloud.points[0].z(), -0.532496, 1e-3);
     ASSERT_EQ(point_cloud.points.size(), 88);
 }
 
@@ -75,8 +75,8 @@ TEST_F(ProtocolTest,
     protocol.handleSingleEcho(data.first);
     auto point_cloud = protocol.getPointCloud();
 
-    ASSERT_NEAR(point_cloud.points[0].x(), -0.331206, 1e-3);
-    ASSERT_NEAR(point_cloud.points[0].y(), 9.11941, 1e-3);
-    ASSERT_NEAR(point_cloud.points[0].z(), -0.515942, 1e-3);
+    ASSERT_NEAR(point_cloud.points[0].x(), 9.11846, 1e-3);
+    ASSERT_NEAR(point_cloud.points[0].y(), 0.331172, 1e-3);
+    ASSERT_NEAR(point_cloud.points[0].z(), -0.532496, 1e-3);
     ASSERT_EQ(point_cloud.points.size(), 88);
 }

@@ -261,7 +261,7 @@ std::optional<base::samples::Pointcloud> Protocol::handleSingleEcho(unsigned cha
         if (distance != 0) {
             uint8_t line_number = data[i];
             base::Angle horizontal_angle =
-                base::Angle::fromDeg((data[i + 1] * 256 + data[i + 2]) / 100.f);
+                base::Angle::fromDeg(((data[i + 1] * 256 + data[i + 2]) / 100.0) - 90.0);
 
             uint8_t intensity = data[i + 6];
 
